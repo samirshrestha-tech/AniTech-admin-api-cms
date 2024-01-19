@@ -5,6 +5,7 @@ import { newValidation } from "../middlewares/joiValidator.js";
 import { clientResponder } from "../middlewares/response.js";
 import { v4 as uuidv4 } from "uuid";
 import { createNewSession } from "../model/session/SessionModel.js";
+import { sendEmailVerification } from "../utils/nodemailer.js";
 
 const router = express.Router();
 
@@ -32,6 +33,8 @@ router.post("/", newValidation, async (req, res, next) => {
         const url = `${process.env.CLIENT_ROOT_DOMAIN}/verify-email?e=${user.email}&c=${c}`;
 
         console.log(url);
+
+        sendEmailVerification({ email: user.email, url, fName: user.fName });
       }
 
       // send the email
