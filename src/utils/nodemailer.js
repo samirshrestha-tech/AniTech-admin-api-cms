@@ -64,3 +64,38 @@ ${url}
 
   emailSender(body);
 };
+
+// success verify email
+
+export const sendEmailVerifiedNotification = ({ email, fName }) => {
+  const body = {
+    from: `Ani Tech <${process.env.SMTP_USER}>`, // sender address
+    to: email, // list of receivers
+    subject: `Your account has been verified.`, // Subject line
+    text: `Hello ${fName}, Your email has been verified. You may login now.\n\n Regards, Ani Tech`, // plain text body
+    html: `<p>Hello, ${fName}</p>
+
+<br />
+<br/>
+
+<p>Thank you for creating an account with us. Please follow the link to verify your account.</p>
+
+
+
+<br />
+
+
+
+<p>Regards,
+    <br />
+
+    Ani Tech
+    <br />
+    www.AniTech.com
+</p>
+    
+    `, // html body
+  };
+
+  emailSender(body);
+};

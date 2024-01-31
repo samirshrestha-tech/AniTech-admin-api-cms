@@ -1,15 +1,21 @@
 import express from "express";
-import { insertUser } from "../model/user/UserModel.js";
+import { insertUser, updateUserStatus } from "../model/user/UserModel.js";
 import { hassPassword } from "../utils/bcrypt.js";
 import { newValidation } from "../middlewares/joiValidator.js";
 import { clientResponder } from "../middlewares/response.js";
 import { v4 as uuidv4 } from "uuid";
-import { createNewSession } from "../model/session/SessionModel.js";
-import { sendEmailVerification } from "../utils/nodemailer.js";
+import {
+  createNewSession,
+  deleteSession,
+} from "../model/session/SessionModel.js";
+import {
+  sendEmailVerification,
+  sendEmailVerifiedNotification,
+} from "../utils/nodemailer.js";
 
 const router = express.Router();
 
-// server side validation
+// server side validation for sign up
 
 router.post("/", newValidation, async (req, res, next) => {
   try {
@@ -54,6 +60,40 @@ router.post("/", newValidation, async (req, res, next) => {
       error.errorCode = 200;
       error.message = "There is already an user with that email id";
     }
+    next(error);
+  }
+});
+
+// verify user email
+
+router.post("/verify-email", async (req, res, next) => {
+  try {
+    // verify if the token and email exists in the session table and if it does we delete it, so user exists
+
+    const { email, token } = req.body;
+
+    const session = await deleteSession({ token, associate: email });
+
+    if (session?._id) {
+      // after the session has been deleted, we update the user status to active and send back verified email to the client
+      const user = await updateUserStatus({ email }, { status: "active" });
+
+      // send email notifications
+
+      if (user?._id) {
+        sendEmailVerifiedNotification({ fName: user.fName, email });
+        return clientResponder.SUCCESS({
+          res,
+          message: "Your account has been veified. You can login now",
+        });
+      }
+    }
+
+    clientResponder.ERROR({
+      res,
+      message: "Invalid or expired link. Could not verify the email.Try again.",
+    });
+  } catch (error) {
     next(error);
   }
 });
