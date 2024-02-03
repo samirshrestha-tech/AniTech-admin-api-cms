@@ -16,6 +16,11 @@ import {
   sendEmailVerification,
   sendEmailVerifiedNotification,
 } from "../utils/nodemailer.js";
+import {
+  createAccessToken,
+  createRefreshToken,
+  webToken,
+} from "../utils/jsonHelper.js";
 
 const router = express.Router();
 
@@ -108,24 +113,42 @@ router.post("/signin", async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // check the email in the database and if it matches create a session
+    if (email && password) {
+      const user = await getUserByEmail(email);
 
-    const user = await getUserByEmail(email);
-    // check if the user id is sent back
-
-    if (user?._id) {
-      // compare the password from the form and the password saved in db
-      const comparePass = checkPass(password, user.password);
-
-      if (comparePass) {
-        // create access and refresh token and send them to the client
-
-        clientResponder.SUCCESS({
+      // check if the user status is active or not
+      if (user?.status === "inactive") {
+        return clientResponder.ERROR({
           res,
-          message: "You have logged in successfully.",
+          message:
+            "Sorry! Your account has not been verified. Please verify your account and try again",
         });
       }
+
+      if (user?._id) {
+        // compare the password from the form and the password saved in db
+        const comparePass = checkPass(password, user.password);
+
+        if (comparePass) {
+          // create access and refresh token
+          const jwts = await webToken(user.email);
+
+          console.log(jwts);
+
+          //  send them to the client
+
+          clientResponder.SUCCESS({
+            res,
+            message: "You have logged in successfully.",
+            jwts,
+          });
+        }
+      }
     }
+
+    // check the email in the database and if it matches create a session
+
+    // check if the user id is sent back
 
     clientResponder.ERROR({
       res,
