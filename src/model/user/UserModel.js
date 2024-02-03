@@ -9,3 +9,7 @@ export const insertUser = (obj) => {
 export const updateUserStatus = (filter, update) => {
   return UserSchema.findOneAndUpdate(filter, update, { new: true });
 };
+
+export const getUserByEmail = (email) => {
+  return UserSchema.findOne({ email });
+};

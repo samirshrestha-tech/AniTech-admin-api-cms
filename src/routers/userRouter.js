@@ -1,6 +1,10 @@
 import express from "express";
-import { insertUser, updateUserStatus } from "../model/user/UserModel.js";
-import { hassPassword } from "../utils/bcrypt.js";
+import {
+  getUserByEmail,
+  insertUser,
+  updateUserStatus,
+} from "../model/user/UserModel.js";
+import { checkPass, hassPassword } from "../utils/bcrypt.js";
 import { newValidation } from "../middlewares/joiValidator.js";
 import { clientResponder } from "../middlewares/response.js";
 import { v4 as uuidv4 } from "uuid";
@@ -93,6 +97,42 @@ router.post("/verify-email", async (req, res, next) => {
       res,
       message: "Invalid or expired link. Could not verify the email.Try again.",
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// user sign in
+
+router.post("/signin", async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    // check the email in the database and if it matches create a session
+
+    const user = await getUserByEmail(email);
+    // check if the user id is sent back
+
+    if (user?._id) {
+      // compare the password from the form and the password saved in db
+      const comparePass = checkPass(password, user.password);
+
+      if (comparePass) {
+        // create access and refresh token and send them to the client
+
+        clientResponder.SUCCESS({
+          res,
+          message: "You have logged in successfully.",
+        });
+      }
+    }
+
+    clientResponder.ERROR({
+      res,
+      message: "Sorry! Couldn't login. Try again or contact the admin.",
+    });
+
+    // redirect the user to the dashboard
   } catch (error) {
     next(error);
   }
