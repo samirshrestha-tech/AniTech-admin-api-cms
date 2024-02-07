@@ -16,11 +16,7 @@ import {
   sendEmailVerification,
   sendEmailVerifiedNotification,
 } from "../utils/nodemailer.js";
-import {
-  createAccessToken,
-  createRefreshToken,
-  webToken,
-} from "../utils/jsonHelper.js";
+import { webToken } from "../utils/jsonHelper.js";
 
 const router = express.Router();
 
@@ -131,29 +127,21 @@ router.post("/signin", async (req, res, next) => {
 
         if (comparePass) {
           // create access and refresh token
-          const jwts = await webToken(user.email);
+          const jwt = await webToken(email);
 
-          console.log(jwts);
-
-          //  send them to the client
-
-          clientResponder.SUCCESS({
+          return clientResponder.SUCCESS({
             res,
             message: "You have logged in successfully.",
-            jwts,
+            jwt,
           });
         }
       }
+    } else {
+      return clientResponder.ERROR({
+        res,
+        message: "Email and Password are required.",
+      });
     }
-
-    // check the email in the database and if it matches create a session
-
-    // check if the user id is sent back
-
-    clientResponder.ERROR({
-      res,
-      message: "Sorry! Couldn't login. Try again or contact the admin.",
-    });
 
     // redirect the user to the dashboard
   } catch (error) {
